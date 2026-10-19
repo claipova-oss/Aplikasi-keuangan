@@ -1,0 +1,6 @@
+{
+  "name": "BukuKas Harian",
+  "description": "Aplikasi pencatatan keuangan harian yang praktis, rapi, dan intuitif untuk mencatat pemasukan, pengeluaran, anggaran, dan laporan keuangan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
