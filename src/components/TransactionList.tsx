@@ -1,8 +1,18 @@
-import React from 'react';
-import { Edit2, Trash2, ArrowDownRight, ArrowUpRight, Receipt, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Edit2,
+  Trash2,
+  ArrowDownRight,
+  ArrowUpRight,
+  Receipt,
+  Plus,
+  Calculator,
+  Pencil,
+} from 'lucide-react';
 import { Transaction, Category, Wallet } from '../types/finance';
 import { formatRupiah, getRelativeDayLabel } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
+import { QuickAmountModal } from './QuickAmountModal';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -11,6 +21,7 @@ interface TransactionListProps {
   onEdit: (tx: Transaction) => void;
   onDelete: (id: string) => void;
   onOpenNewTransaction: () => void;
+  onUpdateAmount: (id: string, newAmount: number) => void;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({
@@ -20,7 +31,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   onEdit,
   onDelete,
   onOpenNewTransaction,
+  onUpdateAmount,
 }) => {
+  const [quickAmountTx, setQuickAmountTx] = useState<Transaction | null>(null);
+
   const categoryMap = new Map<string, Category>(categories.map((c) => [c.id, c]));
   const walletMap = new Map<string, Wallet>(wallets.map((w) => [w.id, w]));
 
@@ -162,9 +176,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: Amount & Actions */}
+                    {/* Right: Amount (Directly clickable to edit) & Action Buttons */}
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                      <div className="text-right">
+                      {/* Clickable Amount with subtle edit hint */}
+                      <button
+                        type="button"
+                        onClick={() => setQuickAmountTx(tx)}
+                        title="Klik untuk cepat ubah jumlah nominal"
+                        className="text-right p-1 -m-1 rounded-lg hover:bg-stone-100 border border-transparent hover:border-stone-200 transition-all cursor-pointer group/amount flex items-center gap-1.5"
+                      >
                         <div
                           className={`text-xs sm:text-sm font-bold font-mono tracking-tight ${
                             isExpense ? 'text-rose-700' : 'text-emerald-700'
@@ -173,18 +193,32 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           {isExpense ? '-' : '+'}
                           {formatRupiah(tx.amount)}
                         </div>
-                      </div>
+                        <Pencil className="w-3 h-3 text-stone-400 opacity-60 group-hover/amount:opacity-100 group-hover/amount:text-stone-700 transition-opacity" />
+                      </button>
 
                       {/* Action buttons */}
-                      <div className="flex items-center gap-0.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-0.5">
+                        {/* Quick Edit Amount Button */}
+                        <button
+                          type="button"
+                          onClick={() => setQuickAmountTx(tx)}
+                          className="p-1.5 text-stone-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors cursor-pointer"
+                          title="Ubah Jumlah Nominal"
+                        >
+                          <Calculator className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Full Edit Button */}
                         <button
                           type="button"
                           onClick={() => onEdit(tx)}
                           className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-md transition-colors cursor-pointer"
-                          title="Ubah Catatan"
+                          title="Ubah Lengkap (Kategori, Tanggal, Catatan)"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
+
+                        {/* Delete Button */}
                         <button
                           type="button"
                           onClick={() => {
@@ -206,6 +240,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           </div>
         );
       })}
+
+      {/* Quick Amount Edit Dialog */}
+      {quickAmountTx && (
+        <QuickAmountModal
+          isOpen={Boolean(quickAmountTx)}
+          onClose={() => setQuickAmountTx(null)}
+          transaction={quickAmountTx}
+          category={categoryMap.get(quickAmountTx.categoryId)}
+          onSaveAmount={onUpdateAmount}
+        />
+      )}
     </div>
   );
 };

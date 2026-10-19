@@ -27,7 +27,7 @@ import {
   exportBackupJSON,
 } from './utils/storage';
 import { generateSampleTransactions } from './constants/defaultData';
-import { getTodayDateString, getCurrentTimeString } from './utils/formatters';
+import { getTodayDateString, getCurrentTimeString, formatRupiah } from './utils/formatters';
 import { Header } from './components/Header';
 import { SummaryCards } from './components/SummaryCards';
 import { QuickTemplatesBar } from './components/QuickTemplatesBar';
@@ -225,6 +225,13 @@ export default function App() {
     }
   };
 
+  const handleUpdateAmount = (id: string, newAmount: number) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, amount: newAmount } : t))
+    );
+    showToast(`Jumlah nominal berhasil diubah menjadi ${formatRupiah(newAmount)}`);
+  };
+
   const handleDeleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
     showToast('Transaksi berhasil dihapus.');
@@ -354,6 +361,7 @@ export default function App() {
               onEdit={handleOpenEdit}
               onDelete={handleDeleteTransaction}
               onOpenNewTransaction={handleOpenNewTransaction}
+              onUpdateAmount={handleUpdateAmount}
             />
           </div>
         )}

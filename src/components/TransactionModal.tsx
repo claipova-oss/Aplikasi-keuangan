@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   ArrowDownRight,
@@ -9,6 +9,7 @@ import {
   FileText,
   BookmarkPlus,
   Check,
+  Calculator,
 } from 'lucide-react';
 import {
   Transaction,
@@ -56,6 +57,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [templateName, setTemplateName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const amountInputRef = useRef<HTMLInputElement>(null);
+
   // Synchronize state when modal opens or editingTransaction changes
   useEffect(() => {
     if (editingTransaction) {
@@ -91,6 +94,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setTemplateName('');
     }
     setErrorMsg('');
+
+    // Auto-focus and highlight amount input when modal opens
+    if (isOpen) {
+      setTimeout(() => {
+        if (amountInputRef.current) {
+          amountInputRef.current.focus();
+          amountInputRef.current.select();
+        }
+      }, 50);
+    }
   }, [editingTransaction, initialPrefill, isOpen, categories, wallets]);
 
   // Adjust category when transaction type toggles
@@ -155,9 +168,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-stone-200 flex items-center justify-between">
-          <h2 className="text-base font-bold text-stone-900">
-            {editingTransaction ? 'Ubah Catatan Keuangan' : 'Catat Keuangan Harian'}
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className={`p-1.5 rounded-lg ${editingTransaction ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+              <Calculator className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-stone-900">
+                {editingTransaction ? 'Ubah Rincian & Jumlah Transaksi' : 'Catat Keuangan Harian'}
+              </h2>
+              {editingTransaction && (
+                <p className="text-[11px] text-stone-500">
+                  Ubah nominal jumlah uang, kategori, atau catatan
+                </p>
+              )}
+            </div>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -203,16 +228,25 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </button>
           </div>
 
-          {/* Amount Input */}
-          <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1.5">
-              Nominal Transaksi (Rp)
-            </label>
+          {/* Amount Input with focus and edit emphasis */}
+          <div className="bg-stone-50/70 p-3.5 rounded-xl border border-stone-200">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-stone-800">
+                Jumlah Nominal (Rp)
+              </label>
+              {editingTransaction && (
+                <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  Ketik untuk ubah nominal
+                </span>
+              )}
+            </div>
+
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-stone-400 text-sm">
                 Rp
               </span>
               <input
+                ref={amountInputRef}
                 type="text"
                 inputMode="numeric"
                 value={amountStr ? new Intl.NumberFormat('id-ID').format(currentAmountNum) : ''}
@@ -220,21 +254,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   const raw = e.target.value.replace(/[^0-9]/g, '');
                   setAmountStr(raw);
                 }}
+                onFocus={(e) => e.target.select()}
                 placeholder="0"
-                autoFocus={!editingTransaction}
-                className="w-full pl-11 pr-4 py-2.5 bg-stone-50 border border-stone-300 rounded-xl font-mono text-xl font-bold text-stone-900 focus:outline-none focus:border-stone-900 focus:bg-white transition-colors"
+                className="w-full pl-11 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl font-mono text-2xl font-bold text-stone-900 focus:outline-none focus:border-stone-900 focus:ring-1 focus:ring-stone-900 transition-colors"
               />
             </div>
 
             {/* Quick add chips */}
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <span className="text-[11px] text-stone-600 font-medium mr-1">Cepat:</span>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+              <span className="text-[11px] text-stone-600 font-medium mr-1">Tambah:</span>
               {[5000, 10000, 20000, 50000, 100000, 500000].map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => addAmount(val)}
-                  className="px-2 py-0.5 bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 rounded text-[11px] font-mono cursor-pointer transition-colors"
+                  className="px-2 py-0.5 bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 rounded text-[11px] font-mono cursor-pointer transition-colors shadow-2xs"
                 >
                   +{val >= 1000000 ? `${val / 1000000}jt` : `${val / 1000}rb`}
                 </button>
@@ -245,7 +279,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   onClick={() => setAmountStr('')}
                   className="px-2 py-0.5 text-stone-400 hover:text-stone-600 text-[11px] underline ml-auto cursor-pointer"
                 >
-                  Hapus
+                  Reset 0
                 </button>
               )}
             </div>
@@ -399,7 +433,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>{editingTransaction ? 'Simpan Perubahan' : 'Simpan Transaksi'}</span>
+              <span>{editingTransaction ? 'Simpan Perubahan Nominal' : 'Simpan Transaksi'}</span>
             </button>
           </div>
         </form>
